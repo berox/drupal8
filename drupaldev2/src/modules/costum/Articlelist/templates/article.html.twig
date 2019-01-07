@@ -4,13 +4,14 @@
   <tr>
     <th>Title</th>
     <th>field_tags</th>
-    <th>Age</th>
+    <th>body</th>
   </tr>
   <td>{{ article.title }}</td>
   <td>{{ dump(article.field_tags) }}</td>
   {#<td>{{ (article.body.0.value) }}</td>#}
   <td>{{ article.body.0.value|length > 50 ? article.body.0.value|slice(0, 50) ~ '...' : article.body.0.value  }}</td>
     <td>{{ article.body.0.value[:50] ~ ( article.body.0.value|length > 50 ? '...') }}</td>
+    <td>{{ article.body.0.value[:50] ~ '...' }}</td>
   {#<td>{{ article.body }}</td>#}
   {#</tr>#}
   {% endfor %}
