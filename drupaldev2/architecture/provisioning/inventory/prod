@@ -1,0 +1,42 @@
+[webservers-prod-main]
+prod-front1 ansible_ssh_host="{{ drupal_project_name }}-front1.smile-hosting.fr"
+
+[webservers-prod-others]
+prod-front2 ansible_ssh_host="{{ drupal_project_name }}-front2.smile-hosting.fr"
+
+[dbservers-prod]
+prod-db1     ansible_ssh_host="{{ drupal_project_name }}-db1.smile-hosting.fr"
+
+[cacheservers-prod]
+prod-db1     ansible_ssh_host="{{ drupal_project_name }}-db1.smile-hosting.fr"
+
+[searchservers-prod]
+prod-db1     ansible_ssh_host="{{ drupal_project_name }}-db1.smile-hosting.fr"
+
+[webservers-prod:children]
+webservers-prod-main
+webservers-prod-others
+
+[webservers-main:children]
+webservers-prod-main
+
+[webservers-others:children]
+webservers-prod-others
+
+[webservers:children]
+webservers-prod
+
+[cacheservers:children]
+cacheservers-prod
+
+[dbservers:children]
+dbservers-prod
+
+[searchservers:children]
+searchservers-prod
+
+[prod:children]
+webservers-prod
+cacheservers-prod
+dbservers-prod
+searchservers-prod

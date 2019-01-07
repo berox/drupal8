@@ -1,0 +1,12 @@
+# Need to have the following site variables:
+# - uri
+
+- name: "Upgrade Drupal database for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "{{ drupal_project_path }}/bin/drush updatedb --entity-updates --uri={{ uri }} -y"
+  register: result_setup_drupal
+  args:
+    chdir: "{{ drupal_source_path }}"
+  run_once: true

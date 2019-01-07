@@ -1,0 +1,28 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+- name: "Create some folders in the shared folder"
+  file:
+    path: "{{ deploy_helper.shared_path }}/{{ item }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    mode: "u=rwX,g=rwX,o=rX"
+
+- name: "Make sure that directory exists"
+  file:
+    path: "{{ deploy_helper.new_release_path }}/{{ item }}"
+    state: directory
+    mode: "u=rwX,g=rwX,o=rX"
+
+- name: "Remove shared directories in the release folder"
+  file:
+    path: "{{ deploy_helper.new_release_path }}/{{ item }}"
+    state: absent
+
+- name: "Add symlinks from the new release to the shared folder"
+  file:
+    src: "{{ deploy_helper.shared_path }}/{{ item }}"
+    dest: "{{ deploy_helper.new_release_path }}/{{ item }}"
+    state: link

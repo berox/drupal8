@@ -1,0 +1,45 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    # block to execute everything as www-data
+    - block:
+
+        - include: includes/site_actions/site-set-cron.yml
+          run_once: true
+          vars:
+            cron_mode: "disable"
+            uri: "{{ script_uri }}"
+            folder_name: "{{ script_folder_name }}"
+
+        - name: "Install Drupal"
+          include: includes/drupal-install.yml
+          run_once: true
+          vars:
+            uri: "{{ script_uri }}"
+            folder_name: "{{ script_folder_name }}"
+
+        # No more need of this task when using CMI / Config split.
+        - name: "Install Drupal Development Modules"
+          include: includes/site_actions/site-install-development-modules.yml
+          run_once: true
+          vars:
+            uri: "{{ script_uri }}"
+
+        - name: "Migrate basic content"
+          include: includes/site_actions/site-import-migrations.yml
+          run_once: true
+          vars:
+            uri: "{{ script_uri }}"
+
+        - include: includes/site_actions/site-set-cron.yml
+          run_once: true
+          vars:
+            cron_mode: "enable"
+            uri: "{{ script_uri }}"
+            folder_name: "{{ script_folder_name }}"

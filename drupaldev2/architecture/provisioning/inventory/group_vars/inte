@@ -1,0 +1,14 @@
+#Vars for Drupal
+drupal_hostname:       "{{ drupal_project_name }}.vitry.intranet"
+drupal_project_path:   "{{ drupal_delivery_path }}/current"
+drupal_source_path:    "{{ drupal_project_path }}/src"
+drupal_mode:           "production"
+
+drupal_php_display_errors:     On
+
+drupal_install_maildev:    true
+
+#List authorized users for delivery
+delivery_authorized_jenkins_users:
+  - ci-jenkins
+delivery_authorized_users: "{{ delivery_authorized_smile_users + delivery_authorized_jenkins_users }}"

@@ -1,0 +1,181 @@
+#Vars for this Project
+drupal_project_name:       drupaldev2
+drupal_install_date:
+drupal_crypt_key:
+deploy_release_path:        "../../build/dist/{{ drupal_project_name }}-{{ deploy_version }}.tar.gz"
+delivery_authorized_smile_users:
+  - drmou
+delivery_authorized_extra_keys: []
+
+#Vars for Drupal Skeleton
+drupal_delivery_path:      "/var/www/{{ drupal_project_name }}"
+drupal_project_path:       "{{ drupal_delivery_path }}"
+drupal_source_path:        "{{ drupal_project_path }}/src"
+drupal_dump_path:          "{{ drupal_project_path }}/dump"
+drupal_hostname:           "www.{{ drupal_project_name }}.com"
+drupal_project_user:       smile
+drupal_project_group:      root
+drupal_webserver_user:     "{{ http_user_name }}"
+drupal_webserver_group:    "{{ http_group_name }}"
+drupal_mode:               "production"
+drupal_profiler:           Off
+drupal_profiler_type:      html
+drupal_php_display_errors: Off
+drupal_php_error_reporting: E_ALL
+drupal_admin_email:        "{{ drupal_project_name }}@smile.fr"
+drupal_admin_user:         admin
+drupal_admin_password:     "{{ drupal_project_name }}"
+drupal_backend_frontname:  admin
+drupal_db_host:            mydb
+drupal_db_table_prefix:
+drupal_use_rewrites:       1
+drupal_language:           en
+drupal_timezone:           Europe/Paris
+drupal_install_profile:    standard
+drupal_cron_log:           "/var/log/drupal_cron.log"
+drupal_cronjob:            "bash -c 'cd {{ drupal_source_path }} && ../bin/drush cron --uri={{ uri }} >> {{ drupal_cron_log }} 2>&1'"
+drupal_launch_migration:   "Off"
+drupal_migration_module:   "{{ drupal_install_profile }}_migrate"
+migration_list:
+#  - {{ drupal_install_profile }}_file
+development_modules:
+  - config_inspector
+  - dblog
+  - devel
+#  - devel_a11y
+  - features_ui
+  - field_ui
+  - kint
+#  - renderviz
+#  - search_kint
+  - serialization
+  - views_ui
+  - webprofiler
+
+# Vars per site that must be global.
+default_db_name:           "{{ drupal_project_name }}"
+default_db_user:           "{{ drupal_project_name }}"
+default_db_password:       "{{ drupal_project_name }}"
+#site1_db_name:           site1
+#site1_db_user:           site1
+#site1_db_password:       site1
+
+drupal_sites:
+  default:
+    folder_name: 'default'
+    uri: "{{ drupal_hostname }}"
+    urls:
+      - "{{ drupal_hostname }}"
+    drupal_site_name: "{{ drupal_project_name }}"
+    drupal_db_name: "{{ default_db_name }}"
+    drupal_db_user: "{{ default_db_user }}"
+    drupal_db_password: "{{ default_db_password }}"
+    drupal_install_profile: "{{ drupal_install_profile }}"
+    drupal_theme: "bartik"
+    drupal_trusted_host_patterns:
+      - "^{{ drupal_hostname }}$"
+    drupal_hash_salt: TO_GENERATE
+    drupal_cache_database: 1
+    drupal_cache_id_prefix: "{{ drupal_project_name }}_"
+#    config_split:
+#      - folder_name: 'dev'
+#        status: 'FALSE'
+#      - folder_name: 'prod'
+#        status: 'FALSE'
+#  site1:
+#    folder_name: 'site1'
+#    uri: "site1.{{ drupal_hostname }}"
+#    urls:
+#      - "site1.{{ drupal_hostname }}"
+#    drupal_site_name: site1
+#    drupal_db_name: "{{ site1_db_name }}"
+#    drupal_db_user: "{{ site1_db_user }}"
+#    drupal_db_password: "{{ site1_db_password }}"
+#    drupal_install_profile: "{{ drupal_install_profile }}"
+#    drupal_theme: "site1_theme"
+#    drupal_trusted_host_patterns:
+#      - "^site1.{{ drupal_hostname }}$"
+#    drupal_hash_salt: TO_GENERATE
+#    drupal_cache_database: 2
+#    drupal_cache_id_prefix: "site1_"
+#    config_split:
+#      - folder_name: 'dev'
+#        status: 'FALSE'
+#      - folder_name: 'prod'
+#        status: 'FALSE'
+
+drupal_php_mode:               fpm
+
+drupal_cache_id_prefix:        "{{ drupal_project_name }}_"
+drupal_cache_host:             myredis
+drupal_cache_port:             6379
+drupal_cache_database:         1
+drupal_cache_session_host:     myredis
+drupal_cache_session_port:     6380
+drupal_cache_session_database: 1
+drupal_cache_backend_type:     redis
+
+drupal_http_cache_hosts:
+  - host: myfront1
+    port: 80
+
+drupal_deploy_di_logs_path:             "/tmp/drupal_deploy_di.log"
+drupal_deploy_static_content_logs_path: "/tmp/drupal_deploy_static_content.log"
+drupal_maintenance_allowed_ips: []
+
+drupal_install_grunt:      false
+drupal_install_maildev:    false
+drupal_install_postfix:    false
+drupal_install_composer:   false
+
+#Vars for postfix
+postfix_hostname: "{{ drupal_hostname }}"
+postfix_tls_enable: true
+
+#Vars for delivery playbook
+deploy_shared_folders:
+  - src/sites/{{ folder_name }}/files
+  - private_files/{{ folder_name }}
+
+deploy_shared_files:
+  - filename: src/sites/{{ folder_name }}/settings.php
+    template: settings.php.j2
+  - filename: src/sites/{{ folder_name }}/services.yml
+    template: services.yml.j2
+  - filename: src/sites/sites.php
+    template: sites.php.j2
+
+#Delivery user
+delivery_authorized_users: "{{ delivery_authorized_smile_users }}"
+deploy_keep_releases: 3
+
+#Hosts to prepare in the /etc/hosts file
+specific_hosts:
+  - myfront1
+  - mydb
+  - myredis
+  - myelasticsearch
+
+#Vars for ansible-basic-server
+extra_packages:
+  - curl
+
+#Vars for ansible-npm
+nodejs_version: "6.10.3"
+
+#Vars for ansible-composer
+composer_version: "1.6.3"
+
+#vars for ansible-nginx
+drupal_ssl_certificate_key_file: "{{ ssl_default_certificate_key_file }}"
+drupal_ssl_certificate_file:     "{{ ssl_default_certificate_file }}"
+
+#vars for ansible-php
+drupal_php_extra_packages:    "{{ php_extra_packages_required }}"
+drupal_php_extension_modules: "{{ php_extension_modules_required }}"
+drupal_php_settings_all:      "{{ php_settings_required }}"
+
+# Drush launcher.
+drush_launcher_version: 0.6.0
+drush_launcher_phar_url: https://github.com/drush-ops/drush-launcher/releases/download/{{ drush_launcher_version }}/drush.phar
+drush_launcher_path: /usr/local/bin/drush

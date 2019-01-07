@@ -1,0 +1,26 @@
+<?php
+
+function Articlelist_theme($existing, $articles, $entities, $path){
+
+
+  return array(
+//    '#theme'  => 'article_list',
+//    'entities'=>$entities,
+//    'articles'=>$articles,
+//
+//  );
+    'article' => array(
+      'template' =>'article',
+      'variables' => array(
+        'articles' => null
+      ))
+  );
+
+
+}
+  function Articlelist_preprocess_article_list($var) {
+  //  $var =\Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree('tags');
+  //  dump($terms); die();
+    dump('jhjhnfgv',$var);
+
+  }

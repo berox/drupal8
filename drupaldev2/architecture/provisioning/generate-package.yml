@@ -1,0 +1,51 @@
+- hosts: localhost
+  connection: local
+  tasks:
+
+  # Check if version is provided.
+  - name: "Check 'deploy_version' var"
+    fail:
+      msg: "You must provide a 'deploy_version' variable in --extra-vars"
+    when: deploy_version is not defined
+    run_once: true
+
+  - name: "Check 'tag' and 'branch' vars"
+    fail:
+      msg: "You cannot provide a 'tag' and a 'branch' together"
+    when: tag is defined and branch is defined
+    run_once: true
+
+  # Check if requested package is already built.
+  - name: "Check if package already generated"
+    stat:
+      path: "{{ deploy_release_path }}"
+    register: package_file
+    run_once: true
+
+  - debug:
+      msg: "Package already exists we skip generation"
+    when: package_file.stat.exists == true and tag is not defined and branch is not defined
+    run_once: true
+
+  - name: "Check that we have a package to deliver"
+    fail:
+      msg: "You must provide a pre generated package version or a VCS tag or branch name"
+    when: package_file.stat.exists == false and tag is not defined and branch is not defined
+    run_once: true
+
+  # Generate package for given tag.
+  - name: "Generate package for tag {{ tag }}"
+    command: 'bin/spbuilder package -n --force-version="{{ deploy_version }}" --force-tag="{{ tag }}"'
+    args:
+      chdir: "../webfactory/"
+    when: tag is defined
+    run_once: true
+
+  # Generate package for given branch.
+  - name: "Generate package for branch {{ branch }}"
+    command: 'bin/spbuilder package -n --force-version="{{ deploy_version }}" --force-branch="{{ branch }}"'
+    args:
+      chdir: "../"
+    when: branch is defined
+    run_once: true
+

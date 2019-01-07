@@ -1,0 +1,13 @@
+# Need to have the following site variables:
+# - uri
+
+- name: "Install each drupal dev module for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush en {{ item }} --uri={{ uri }} -y"
+  with_items: "{{ development_modules|default([]) }}"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: drupal_mode == "developer"
+  run_once: true

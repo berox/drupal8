@@ -1,0 +1,172 @@
+{
+    "name": "drupal/drupal8-composer-skeleton",
+    "description": "It's the drupal skeleton. Used to initialize drupal's project.",
+    "type": "project",
+    "repositories": {
+        "asset-packagist": {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        },
+        "drupal": {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8",
+            "options": {
+                "ssl": {
+                    "verify_peer": true,
+                    "allow_self_signed": true
+                }
+            }
+        },
+        "smile_drupal": {
+            "type": "composer",
+            "url": "https://packagist.vitry.intranet/drupal/",
+            "options": {
+                "ssl": {
+                    "verify_peer": true,
+                    "allow_self_signed": true
+                }
+            }
+        },
+        "smile_libraries": {
+            "type": "composer",
+            "url": "https://packagist.vitry.intranet/libraries/",
+            "options": {
+                "ssl": {
+                    "verify_peer": true,
+                    "allow_self_signed": true
+                }
+            }
+        }
+    },
+    "require": {
+        "composer/installers": "^1.0.21",
+        "cweagans/composer-patches": "~1.0",
+        "drupal-composer/drupal-scaffold": "^2.0.1",
+        "drupal/admin_toolbar": "^1.22.0",
+        "drupal/block_visibility_groups": "^1.1.0",
+        "drupal/core": "~8.6.1",
+        "drupal/drush_language": "1.0.0-rc2",
+        "drupal/eu_cookie_compliance": "~1.2.0",
+        "drupal/features": "^3.5.0",
+        "drupal/honeypot": "^1.27.0",
+        "drupal/metatag": "^1.4.0",
+        "drupal/pathauto": "^1.0",
+        "drupal/redis": "1.0.0",
+        "drupal/token": "^1.1.0",
+        "drush/drush": "~9.2.1",
+        "oomphinc/composer-installers-extender": "^1.1",
+        "symfony/var-dumper": "^3.4",
+        "wikimedia/composer-merge-plugin": "~1.3"
+    },
+    "require-dev": {
+        "bower-asset/d3": "3.5.*",
+        "bower-asset/highlightjs": "9.12.*",
+        "drupal/coder": "8.2.*",
+        "drupal/config_inspector": "1.*",
+        "drupal/console": "1.*",
+        "drupal/devel": "1.*",
+        "drupal/devel_a11y": "1.*",
+        "drupal/drupal-extension": "3.*",
+        "drupal/examples": "1.*",
+        "drupal/pistachio": "1.*",
+        "drupal/renderviz": "1.*",
+        "drupal/search_kint": "1.*",
+        "drupal/speedboxes": "1.*",
+        "webflo/drupal-core-require-dev": "~8.6"
+    },
+    "conflict": {
+        "drupal/drupal": "*"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "extra": {
+        "_readme": [
+            "By default Drupal loads the autoloader from ./vendor/autoload.php.",
+            "To change the autoloader you can edit ./autoload.php."
+        ],
+        "enable-patching": true,
+        "patches": {
+        },
+        "installer-types": [
+            "bower-asset",
+            "npm-asset"
+        ],
+        "installer-paths": {
+            "src/core": [
+                "type:drupal-core"
+            ],
+            "src/modules/contrib/{$name}": [
+                "type:drupal-module",
+                "type:drupal-drush"
+            ],
+            "src/modules/custom/{$name}": [
+                "type:drupal-custom-module"
+            ],
+            "src/profiles/contrib/{$name}": [
+                "type:drupal-profile"
+            ],
+            "src/profiles/custom/{$name}": [
+                "type:drupal-custom-profile"
+            ],
+            "src/themes/contrib/{$name}": [
+                "type:drupal-theme"
+            ],
+            "src/themes/custom/{$name}": [
+                "type:drupal-custom-theme"
+            ],
+            "src/libraries/{$name}": [
+                "type:drupal-library",
+                "type:bower-asset",
+                "type:npm-asset"
+            ],
+            "integration": [
+                "type:integration"
+            ],
+            "scripts/ci": [
+                "type:project-ci"
+            ]
+        },
+        "drupal-scaffold": {
+            "excludes": [
+                ".ht.router.php",
+                "web.config",
+                "sites/development.services.yml",
+                "sites/example.settings.local.php"
+            ]
+        }
+    },
+    "config": {
+        "bin-dir": "./bin",
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "ext-gd": "1"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Drupal\\Core\\Composer\\": "src/core/lib/Drupal/Core/Composer"
+        },
+        "classmap": [
+            "scripts/composer/ScriptHandler.php"
+        ]
+    },
+    "scripts": {
+        "generate-assets": "DrupalProject\\composer\\ScriptHandler::compileAssets",
+        "drupal-scaffold": "DrupalComposer\\DrupalScaffold\\Plugin::scaffold",
+        "multi-site-scaffold": "DrupalProject\\composer\\ScriptHandler::createRequiredDefaultFilesForSites",
+        "remove-spbuilder-symlink": "DrupalProject\\composer\\ScriptHandler::removeSpbuilderSymlink",
+        "pre-autoload-dump": "Drupal\\Core\\Composer\\Composer::preAutoloadDump",
+        "post-autoload-dump": "Drupal\\Core\\Composer\\Composer::ensureHtaccess",
+        "post-package-install": "Drupal\\Core\\Composer\\Composer::vendorTestCodeCleanup",
+        "post-package-update": "Drupal\\Core\\Composer\\Composer::vendorTestCodeCleanup",
+        "post-install-cmd": [
+            "@drupal-scaffold",
+            "DrupalProject\\composer\\ScriptHandler::createRequiredFiles"
+        ],
+        "post-update-cmd": [
+            "@drupal-scaffold",
+            "DrupalProject\\composer\\ScriptHandler::createRequiredFiles"
+        ]
+    }
+}

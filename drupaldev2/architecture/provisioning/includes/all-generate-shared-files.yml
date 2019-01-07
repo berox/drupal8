@@ -1,0 +1,13 @@
+- set_fact:
+    uri: "{{ site_info.value.uri }}"
+    folder_name: "{{ site_info.value.folder_name }}"
+
+- block:
+  - name: "Init files in the shared folder"
+    template:
+      src:   "templates/drupal/{{ item.template }}"
+      dest:  "{{ deploy_helper.shared_path }}/{{ item.filename }}"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      mode:  "u=rw,g=rw,o=r"
+    with_items: "{{ deploy_shared_files|default([]) }}"

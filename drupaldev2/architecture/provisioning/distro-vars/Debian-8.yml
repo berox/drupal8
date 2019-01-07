@@ -1,0 +1,20 @@
+---
+#Vars for dbservers
+mysql_flavor: "percona"
+mysql_log_slow_verbosity: "full"
+
+#Vars for webservers
+ssl_default_certificate_key_file: "/etc/ssl/private/ssl-cert-snakeoil.key"
+ssl_default_certificate_file:     "/etc/ssl/certs/ssl-cert-snakeoil.pem"
+varnish_use_repo:     "4.1"
+varnish_main_version: "4"
+http_service_name: "apache2"
+http_user_name:    "www-data"
+http_group_name:   "www-data"
+php_ver:           "5"
+php_path:          "php"
+php_extra_packages_required: []
+php_extra_packages_debug:    []
+
+#Vars for ansible-npm
+nodejs_version: "4.6.1"

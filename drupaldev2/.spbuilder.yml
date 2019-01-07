@@ -1,0 +1,80 @@
+# Contains global Spbuilder configuration.
+global:
+  technology: drupal
+  technology_version: 8
+  log_dir: build/logs
+  package_dir: build/dist
+  clean: true
+
+# Quality tools configuration.
+tools:
+  phpcs:
+    standard: scripts/spbuilder/vendor/smile/php-codesniffer-rules/src/SmileDrupal8
+    files:
+      - src/modules/custom
+    extensions:
+      - php
+      - module
+      - install
+      - theme
+    ignores:
+      - "*src/Tests/*"
+      - "*/tests/*"
+  phplint:
+    files:
+      - src/modules/custom
+  phpmd:
+    files:
+      - src/modules/custom
+    rulesets:
+      - scripts/spbuilder/vendor/smile/php-md-rules/resources/rulesets/Drupal/cleancode.xml
+      - codesize
+      - design
+      - scripts/spbuilder/vendor/smile/php-md-rules/resources/rulesets/Drupal/naming.xml
+      - scripts/spbuilder/vendor/smile/php-md-rules/resources/rulesets/Drupal/unusedcode.xml
+  phpcpd:
+    files:
+      - src/modules/custom
+  visualization:
+    files: src/
+    hostname: localhost
+    port: 8080
+
+# Package creation.
+package:
+  # Package format (availables : tar, tar,gz, tar.bz2, zip, phar, none).
+  format: tar.gz
+  # (Optional) Package name (default is composer's <vendorName>-<projectName>
+  artefact: PROJECT_NAME
+  # Commands to run during packaging.
+  commands:
+    - composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --ignore-platform-reqs
+    # For scaffolding (index.php, etc) not included when already composer.lock.
+    - composer drupal:scaffold
+    - composer run-script multi-site-scaffold
+    - composer run-script generate-assets
+    - composer run-script remove-spbuilder-symlink
+  # Path to exclude from package.
+  excludes:
+    - ./architecture
+    - ./build
+    - ./docs
+    - ./scripts
+    - ./lxcfile
+    - ./CONTRIBUTING.md
+    - ./COPYING.txt
+    - ./ISSUE_TEMPLATE.md
+    - ./README.md
+    - ./.gitignore
+    - ./.php_cs
+    - ./.spbuilder.yml
+    - ./.travis.yml
+    - ./package.json
+    - ./Gruntfile.js
+    - .htaccess
+  skipRoot: true
+  vcs:
+    # VCS Type (availables : git, svn).
+    type: git
+    # Repository URL (default to local git repo, with .git extension, not the https one).
+    url: ~

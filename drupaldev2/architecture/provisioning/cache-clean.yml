@@ -1,0 +1,21 @@
+---
+- hosts: webservers
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+    all_sites: "N"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    # Case all sites are selected.
+    - include: includes/all-clean-cache.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info
+      when: all_sites|upper == "ALL"
+
+    # Case only one site is selected.
+    - include: includes/site_actions/site-clean-cache.yml
+      when: all_sites|upper != "ALL"
+      vars:
+        uri: "{{ script_uri }}"

@@ -1,0 +1,30 @@
+{
+  "name": "drupal/spbuilder",
+  "description": "Install SpBuilder in a separate folder.",
+  "type": "project",
+  "repositories": {
+    "smile_libraries": {
+      "type": "composer",
+      "url": "https://packagist.vitry.intranet/libraries/",
+      "options": {
+        "ssl": {
+          "verify_peer": true,
+          "allow_self_signed": true
+        }
+      }
+    }
+  },
+  "require": {
+    "smile/php-codesniffer-rules": "^4.0",
+    "smile/spbuilder": "^4.0"
+  },
+  "require-dev": {
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "config": {
+    "bin-dir": "bin",
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

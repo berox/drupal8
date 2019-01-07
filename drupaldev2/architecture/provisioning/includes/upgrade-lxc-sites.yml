@@ -1,0 +1,15 @@
+- set_fact:
+    uri: "{{ site_info.value.uri }}"
+    folder_name: "{{ site_info.value.folder_name }}"
+
+- include: includes/site_actions/site-backup-database.yml
+
+# Init configuration files if needed.
+- include: includes/site_actions/site-init-file-from-drupal-template.yml
+  vars:
+    init_path: "{{ drupal_project_path }}"
+  with_items: "{{ deploy_shared_files|default([]) }}"
+
+- include: includes/site_actions/site-upgrade-tasks.yml
+
+- include: includes/site_actions/site-import-migrations.yml

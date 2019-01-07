@@ -1,0 +1,50 @@
+- name: "Check if project root folder exists"
+  stat:
+    path: "{{ drupal_project_path }}"
+  register: project_path
+
+- name: "Check if Drupal root folder exists"
+  stat:
+    path: "{{ drupal_source_path }}"
+  register: drupal_path
+
+- name: "Set permissions to project sources"
+  file:
+    path: "{{ drupal_project_path }}"
+    group: "{{ drupal_project_group }}"
+    owner: "{{ drupal_project_user }}"
+    recurse: yes
+    follow: yes
+    state: directory
+    mode: "u=rwX,g=rX,o=rX"
+  when: project_path.stat.exists and ansible_user == "root"
+
+- name: "Set execution mode to scripts"
+  file:
+    path: "{{ item }}"
+    recurse: yes
+    state: directory
+    mode: "u+x,g+x"
+  with_items:
+    - "{{ drupal_project_path }}/bin"
+    - "{{ drupal_project_path }}/scripts"
+  when: project_path.stat.exists
+
+- name: "Fix permissions for {{ drupal_source_path }}/translations/contrib folder"
+  file:
+    path: "{{ drupal_source_path }}/translations/contrib"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    recurse: yes
+    follow: yes
+    mode: "g+w"
+  when: drupal_path.stat.exists
+  failed_when: false
+
+# Get light permissions + others.
+- name: "Apply light permissions to all sites."
+  include: includes/all-permissions.yml
+  with_dict: "{{ drupal_sites|default({}) }}"
+  loop_control:
+    loop_var: site_info

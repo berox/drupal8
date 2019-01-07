@@ -1,0 +1,4 @@
+- set_fact:
+    folder_name: "{{ site_info.value.folder_name }}"
+
+- include: includes/site_actions/site-permissions.yml

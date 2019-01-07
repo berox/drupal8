@@ -1,0 +1,29 @@
+---
+#Vars for dbservers
+mysql_flavor: "percona"
+mysql_log_slow_verbosity: "full"
+
+#Vars for webservers
+ssl_default_certificate_key_file: "/etc/pki/tls/private/localhost.key"
+ssl_default_certificate_file:     "/etc/pki/tls/certs/localhost.crt"
+varnish_use_repo:     "4.1"
+varnish_main_version: "4"
+http_service_name: "httpd"
+http_user_name:    "apache"
+http_group_name:   "apache"
+php_ver:           "7.0"
+php_path:          "/opt/rh/rh-php70/root/usr/bin/php"
+php_scl_version:   "7.0"
+php_extra_packages_required:
+  - http://mirror.centos.org/centos/7/sclo/x86_64/sclo/sclo-php70/sclo-php70-php-pecl-igbinary-2.0.4-1.el7.x86_64.rpm
+#  - http://mirror.centos.org/centos/7/sclo/x86_64/sclo/sclo-php70/sclo-php70-php-pecl-redis-3.1.2-1.el7.x86_64.rpm
+  - http://mirror.centos.org/centos/7/sclo/x86_64/sclo/sclo-php70/sclo-php70-php-mcrypt-7.0.16-1.el7.x86_64.rpm
+#  - http://mirror.centos.org/centos/7/os/x86_64/Packages/memcached-1.4.15-10.el7_3.1.x86_64.rpm
+#  - http://mirror.centos.org/centos/7/sclo/x86_64/sclo/sclo-php70/sclo-php70-php-pecl-memcached-3.0.3-2.el7.x86_64.rpm
+php_extra_packages_debug:
+  - http://mirror.centos.org/centos/7/sclo/x86_64/sclo/sclo-php70/sclo-php70-php-pecl-xdebug-2.4.1-1.el7.x86_64.rpm
+
+# Cache
+drupal_cache_port:             11211
+drupal_cache_session_host:     myredis
+drupal_cache_backend_type:     none

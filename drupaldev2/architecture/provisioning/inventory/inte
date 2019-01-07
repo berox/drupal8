@@ -1,0 +1,41 @@
+[webservers-inte-main]
+inte ansible_ssh_host="{{ drupal_project_name }}.vitry.intranet"
+
+[webservers-inte-others]
+
+[dbservers-inte]
+inte ansible_ssh_host="{{ drupal_project_name }}.vitry.intranet"
+
+[cacheservers-inte]
+inte ansible_ssh_host="{{ drupal_project_name }}.vitry.intranet"
+
+[searchservers-inte]
+inte ansible_ssh_host="{{ drupal_project_name }}.vitry.intranet"
+
+[webservers-inte:children]
+webservers-inte-main
+webservers-inte-others
+
+[webservers-main:children]
+webservers-inte-main
+
+[webservers-others:children]
+webservers-inte-others
+
+[webservers:children]
+webservers-inte
+
+[cacheservers:children]
+cacheservers-inte
+
+[dbservers:children]
+dbservers-inte
+
+[searchservers:children]
+searchservers-inte
+
+[inte:children]
+webservers-inte
+cacheservers-inte
+dbservers-inte
+searchservers-inte

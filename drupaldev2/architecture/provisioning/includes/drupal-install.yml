@@ -1,0 +1,58 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+# On webservers-main for user {{ drupal_project_user }}
+- debug:
+    msg: "NOTICE : Drupal installation will be done now"
+
+# Init configuration files if needed.
+- include: includes/site_actions/site-init-file-from-drupal-template.yml
+  vars:
+    init_path: "{{ drupal_project_path }}"
+  with_items: "{{ deploy_shared_files|default([]) }}"
+
+# Security check for any case.
+- block:
+  # Insure permissions for Drupal installation.
+  - name: "Insure webserver user can write configuration in sites/{{ folder_name }}/settings.php file"
+    file:
+      path: "{{ drupal_source_path }}/sites/{{ folder_name }}/settings.php"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "g+w"
+
+  - name: "Insure webserver user can write configuration in sites/{{ folder_name }}/services.yml file"
+    file:
+      path: "{{ drupal_source_path }}/sites/{{ folder_name }}/services.yml"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "g+w"
+
+- block:
+#  - include: includes/site_actions/site-backup-database.yml
+
+  - name: "Clear Redis database for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "redis-cli -h {{ drupal_cache_host }} -n {{ drupal_sites[folder_name].drupal_cache_database }} FLUSHDB"
+    when: drupal_cache_backend_type == "redis"
+    # Most of the time, there is only one cache server.
+    # TODO: If multiple Redis cache servers (sentinel mode?), see if the flush
+    # needs to be executed on all servers.
+    delegate_to: "{{ groups['cacheservers'][0] }}"
+
+  - include: includes/site_actions/site-install.yml
+
+  - include: includes/site_actions/site-rebuild-permissions.yml
+
+  # No more need of this task when using CMI / Config split.
+  - include: includes/site_actions/site-set-default-theme.yml
+
+  - include: includes/site_actions/site-upgrade-tasks.yml
+
+- name: "Reset permissions for {{ folder_name }}"
+  include: includes/site_actions/site-permissions.yml

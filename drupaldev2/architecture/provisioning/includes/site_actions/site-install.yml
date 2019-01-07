@@ -1,0 +1,19 @@
+# Need to have the following site variables:
+# - folder_name
+
+- name: "Install site {{ folder_name }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "{{ drupal_project_path }}/bin/drush si {{ drupal_sites[folder_name].drupal_install_profile }}
+    --account-name={{ drupal_admin_user }}
+    --account-pass={{ drupal_admin_password }}
+    --account-mail={{ drupal_admin_email }}
+    --locale={{ drupal_language }}
+    --site-name={{ drupal_sites[folder_name].drupal_site_name }}
+    --site-mail={{ drupal_admin_email }}
+    --sites-subdir={{ drupal_sites[folder_name].folder_name }}
+    -y"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  run_once: true

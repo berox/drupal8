@@ -1,0 +1,18 @@
+#Vars for Drupal
+drupal_hostname:       "{{ drupal_project_name }}-pp.smile-hosting.fr"
+drupal_project_path:   "{{ drupal_delivery_path }}/current"
+drupal_source_path:    "{{ drupal_project_path }}/src"
+drupal_mode:           "production"
+
+#Drupal varnish config
+varnish_memory_mb:    256
+varnish_vcl_template: templates/varnish/drupal_varnish4_vcl.preprod.j2
+varnish_basic_auth:   "XXXXXXXXXXXXXXXXXXXXXXX="
+
+#ElasticSearch
+#es_config_other:
+#  network.bind_host:  0
+#  bootstrap.mlockall: "true"
+#  script.inline:      "on"
+#  script.indexed:     "on"
+#  path.repo:          "\"/home/backup/local/elastic/\""

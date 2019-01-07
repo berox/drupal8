@@ -1,0 +1,32 @@
+# Need to have the following site variables:
+# - uri
+
+# Check Drupal installation.
+- set_fact:
+    drupal_is_installed: false
+  run_once: true
+
+- name: "Check if Drupal is installed for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush status --fields=bootstrap --uri={{ uri }}"
+  register: drupal_install
+  args:
+    chdir: "{{ drupal_source_path }}"
+  run_once: true
+
+- set_fact:
+    drupal_is_installed: true
+  when: "drupal_install.stdout|trim!=''"
+  run_once: true
+
+- debug:
+    msg: "Drupal is installed"
+  when: drupal_is_installed
+  run_once: true
+
+- debug:
+    msg: "Drupal is NOT installed"
+  when: not drupal_is_installed
+  run_once: true

@@ -1,0 +1,154 @@
+#Vars for ansible-basicserver
+install_sudoers: true
+sudo_allowed_users:
+  - "{{ drupal_webserver_user }}"
+
+#Vars for ansible-nginx
+nginx_use_ssl:  true
+nginx_ssl_port: 443
+
+nginx_disabled_default:
+  - "default"
+
+nginx_vhosts:
+  drupalsslvhost:
+    template:               templates/nginx/drupal_vhost.j2
+    vhost_name:             "{{ drupal_project_name }}-ssl"
+    server_name:            "{{ drupal_hostname }}"
+#    server_aliases:
+#      - site1.{{ drupal_hostname }}
+    redirect_host:          127.0.0.1
+    redirect_port:          80
+    ssl:
+        enabled:                True
+        certificate_key_file:   "{{ drupal_ssl_certificate_key_file }}"
+        certificate_file:       "{{ drupal_ssl_certificate_file }}"
+    document_root:          "{{ drupal_source_path }}"
+    create_document_root:   false
+
+#Vars for ansible-apache
+apache2_disabled_default:
+  - "default_ssl.conf"
+  - "000-default.conf"
+
+apache2_modules:
+  - headers
+  - deflate
+  - rewrite
+  - expires
+  - remoteip
+
+apache2_modules_specific_conf:
+  - name: remoteip
+    template: templates/apache/remoteip_conf.j2
+
+apache2_port: 81
+apache2_vhosts:
+  drupalvhost:
+    template:               templates/apache/drupal_vhost.j2
+    vhost_name:             "{{ drupal_project_name }}"
+    server_name:            "{{ drupal_hostname }}"
+#    server_aliases:
+#      - site1.{{ drupal_hostname }}
+    document_root:          "{{ drupal_source_path }}"
+    create_document_root:   false
+#    environment_vars:
+
+#Vars for ansible-php
+php_extension_modules_debug:
+  - xdebug
+
+php_extension_modules_required:
+  - bcmath
+  - curl
+  - gd
+  - iconv
+  - intl
+  - json
+  - mbstring
+  - mcrypt
+  - mhash
+  - mysql
+  - pdo
+  - pdo-mysql
+  - readline
+  - redis
+  - simplexml
+  - soap
+  - xml
+  - xsl
+  - zip
+
+php_settings_required:
+  max_execution_time:               18000
+  display_errors:                   "{{ drupal_php_display_errors }}"
+  error_reporting:                  "{{ drupal_php_error_reporting }}"
+  log_errors:                       On
+  date.timezone:                    Europe/Paris
+  session.auto_start:               0
+  always_populate_raw_post_data:    -1
+  opcache.memory_consumption:       256M
+  opcache.max_accelerated_files:    65407
+  allow_url_fopen:                  Off
+  session.cookie_secure:            On
+  session.cookie_httponly:          On
+
+php_settings_debug:
+  xdebug.idekey:              PHPSTORM
+  xdebug.max_nesting_level:   256
+  xdebug.remote_autostart:    1
+  xdebug.remote_connect_back: 1
+  xdebug.remote_enable:       1
+  xdebug.remote_port:         9000
+  xdebug.remote_host:         10.0.3.1
+
+
+php_extra_packages:    "{{ drupal_php_extra_packages }}"
+php_extension_modules: "{{ drupal_php_extension_modules }}"
+php_settings_all:      "{{ drupal_php_settings_all }}"
+
+php_settings_apache2:
+  memory_limit:                     768M
+
+php_settings_fpm:
+  memory_limit:                     768M
+
+php_settings_cli:
+  memory_limit:                     2G
+
+php_fpm_pools:
+  drupal:
+    pool_name:      "{{ drupal_project_name }}"
+    user:           "{{ drupal_webserver_user }}"
+    group:          "{{ drupal_webserver_group }}"
+    listen_owner:   "{{ drupal_webserver_user }}"
+    listen_group:   "{{ drupal_webserver_group }}"
+
+php_fpm_pools_disabled_default:
+  - www
+
+#Vars for ansible-varnish
+varnish_use_repo:       4.1
+varnish_memory_mb:      64
+varnish_vcl_name:       "{{ drupal_project_name }}"
+varnish_port:           80
+varnish_backend_port:   81
+varnish_vcl_template:   templates/varnish/drupal_varnish4_vcl.all.j2
+varnish_purge:
+  - "localhost"
+  - "myfront1"
+varnish_admin:
+  - "localhost"
+  - "myfront1"
+varnish_client: []
+
+# Vars for logrotate.
+logrotate_pattern: "drupal*.log"
+logrotate_conf_destination: /etc/logrotate.d/drupal.conf
+
+# Vars for ansible-rsyslog.
+# For rsyslog to work with Drupal, in syslog config set
+# "drupal_[your_site_identifier]" in identity field.
+rsyslog_sites:
+  - drupal_default
+#  - drupal_site1

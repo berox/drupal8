@@ -1,0 +1,162 @@
+---
+# load variables for each servers
+- hosts:
+    - dbservers
+    - cacheservers
+    - searchservers
+    - webservers
+  vars:
+    ansible_user: "root"
+  tasks:
+    - include: includes/include-vars.yml
+
+- hosts:
+    - dbservers
+    - cacheservers
+    - searchservers
+    - webservers
+  connection: local
+
+  vars:
+    ansible_user: "root"
+    tmp_delivery_users:
+      - name:   "{{ drupal_project_user }}"
+        group:  "{{ drupal_webserver_group }}"
+        authorized_keys: "{{ delivery_authorized_keys }}"
+
+  tasks:
+    - name: "Prepare the list of the authorized keys for delivery - Extra Keys"
+      set_fact: delivery_authorized_keys="{{ delivery_authorized_extra_keys }}"
+
+#    - name: "Prepare the list of the authorized keys for delivery - Smile Users"
+#      set_fact: delivery_authorized_keys="{{ delivery_authorized_keys }} + [ '{{ lookup(\'ldapkey\', \'{{ item }}\') }}' ]"
+#      with_items: "{{ delivery_authorized_users }}"
+
+    - name: "Prepare the delivery_users object"
+      set_fact: delivery_users="{{ tmp_delivery_users }}"
+
+# add hosts alias on Servers
+- hosts:
+    - dbservers
+    - cacheservers
+    - searchservers
+    - webservers
+  vars:
+    ansible_user: "root"
+  tasks:
+    - include: includes/init-hosts.yml
+      with_items: "{{ specific_hosts|default([]) }}"
+
+# Generic behaviors on all servers
+- hosts:
+    - dbservers
+    - cacheservers
+    - searchservers
+    - webservers
+  vars:
+    ansible_user: "root"
+  roles:
+    - role: ansible-basicserver
+
+# Generic usage of the ansible roles - DB Server
+- hosts: dbservers
+  vars:
+    ansible_user: "root"
+  roles:
+    - role: ansible-mysql-server
+
+# Generic usage of the ansible roles - Cache Server
+- hosts: cacheservers
+  vars:
+    ansible_user: "root"
+  roles:
+    - { role: ansible-redis, redis_instance_name: "drupal_cache",   redis_setting_port: "{{ drupal_cache_port }}" }
+    - { role: ansible-redis, redis_instance_name: "drupal_session", redis_setting_port: "{{ drupal_cache_session_port }}" }
+
+# Generic usage of the ansible roles - Search Server
+#- hosts: searchservers
+#  vars:
+#    ansible_user: "root"
+#  roles:
+#    - role: ansible-elasticsearch
+
+# Prepare php parameters
+- hosts: webservers
+  vars:
+    ansible_user: "root"
+  tasks:
+    - include: includes/prepare-php-parameters.yml
+
+# Generic usage of the ansible roles - Webserver Server
+- hosts: webservers
+  vars:
+    ansible_user: "root"
+  roles:
+    - role: ansible-nginx
+    - role: ansible-varnish
+    - role: ansible-apache
+    - role: ansible-php
+    - role: ansible-logrotate
+    - role: ansible-rsyslog
+    - { role: ansible-composer, when: drupal_install_composer }
+    - { role: ansible-postfix-satellite, when: drupal_install_postfix and not drupal_install_maildev }
+
+# Make php cli symlink if necessary (ie: for centos, ...)
+- hosts: webservers
+  vars:
+    ansible_user: "root"
+  tasks:
+    - name: "Check if /usr/bin/php link already exists"
+      stat:
+        path: "/usr/bin/php"
+      register: php_bin_link
+    - name: "Make PHP cli symlink if necessary"
+      file:
+        src: "{{ php_path }}"
+        dest: "/usr/bin/php"
+        state: link
+      when: php_bin_link.stat.exists == False
+
+# Install Drush Launcher.
+- hosts: webservers
+  vars:
+    ansible_user: "root"
+  tasks:
+    - name: "Install Drush Launcher."
+      get_url:
+        url: "{{ drush_launcher_phar_url }}"
+        dest: "{{ drush_launcher_path }}"
+        mode: 0755
+        force: yes
+
+# Specific usage of the ansible roles - Webserver Server - Dev Tools
+- hosts: webservers
+  vars:
+    ansible_user: "root"
+  roles:
+    - { role: ansible-npm, when: drupal_install_maildev or drupal_install_grunt }
+    - { role: ansible-maildev, when: drupal_install_maildev and not drupal_install_postfix }
+
+  tasks:
+  - name: "Install NPM package: grunt-cli"
+    npm: name="grunt-cli" global=yes
+    when: drupal_install_grunt
+
+  - name: "Create {{ drupal_delivery_path }} folder"
+    file:
+      path:  "{{ drupal_delivery_path }}"
+      state: directory
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_project_group }}"
+      mode:  "u=rwX,g=rX,o=rX"
+
+  - name: "Init drupal cron log file "
+    file:
+      path: "{{ drupal_cron_log }}"
+      state: touch
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      mode: "u=rw,g=rw"
+
+  # Update permissions.
+  - include: includes/permissions-tasks-full.yml

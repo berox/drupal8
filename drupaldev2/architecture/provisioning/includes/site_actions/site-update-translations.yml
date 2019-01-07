@@ -1,0 +1,141 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+# // TODO: have fr as a parameter.
+
+# Check Locale installation.
+- set_fact:
+    locale_is_installed: false
+  run_once: true
+
+- name: "Check Drush version"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush version --format=string"
+  register: drush_version
+  args:
+    chdir: "{{ drupal_source_path }}"
+  ignore_errors: True
+  run_once: true
+
+# Drush 9.
+- block:
+  - name: "Check if Locale is installed for {{ uri }} (Drush 9)"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    shell: "{{ drupal_project_path }}/bin/drush pm:list --fields=name --status=enabled --format=list --uri={{ uri }}|grep locale"
+    ignore_errors: True
+    register: locale_install
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+  - set_fact:
+      locale_is_installed: true
+    run_once: true
+    when: drush_version.stdout[:1] == '9' and locale_install.stdout|trim!=''
+
+  - block:
+    - name: "Check translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush locale:check --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '9' and locale_is_installed
+
+    - name: "Update translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush locale:update --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '9' and locale_is_installed
+
+    - name: "Enable drush language for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      shell: "{{ drupal_project_path }}/bin/drush pm:enable drush_language --uri={{ uri }} -y"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '9' and locale_is_installed
+
+    - name: "Import custom translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush language:import:translations --langcode=fr {{ drupal_source_path }}/profiles/custom/{{ drupal_sites[folder_name].drupal_install_profile }}/translations/{{ drupal_sites[folder_name].drupal_install_profile }}.fr.po --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '9' and locale_is_installed
+
+
+# Drush 8.
+- block:
+  - name: "Check if Locale is installed for {{ uri }} (Drush 8)"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    shell: "{{ drupal_project_path }}/bin/drush pm-info --fields=status --format=list --uri={{ uri }} locale"
+    ignore_errors: True
+    register: locale_install
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'
+
+  - set_fact:
+      locale_is_installed: true
+    run_once: true
+    when: drush_version.stdout[:1] == '8' and locale_install.stdout == 'enabled'
+
+  - block:
+    - name: "Check translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush locale-check --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '8' and locale_is_installed
+
+    - name: "Update translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush locale-update --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '8' and locale_is_installed
+
+    - name: "Enable drush language for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      shell: "{{ drupal_project_path }}/bin/drush en drush_language --uri={{ uri }} -y"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '8' and locale_is_installed
+
+    - name: "Import custom translations for {{ uri }}"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/drush language-import-translations --langcode=fr {{ drupal_source_path }}/profiles/custom/{{ drupal_sites[folder_name].drupal_install_profile }}/translations/{{ drupal_sites[folder_name].drupal_install_profile }}.fr.po --uri={{ uri }}"
+      args:
+        chdir: "{{ drupal_source_path }}"
+      run_once: true
+      when: drush_version.stdout[:1] == '8' and locale_is_installed

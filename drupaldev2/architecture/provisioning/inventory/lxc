@@ -1,0 +1,41 @@
+[webservers-lxc-main]
+lxc ansible_ssh_host="{{ drupal_project_name }}.lxc"
+
+[webservers-lxc-others]
+
+[dbservers-lxc]
+lxc ansible_ssh_host="{{ drupal_project_name }}.lxc"
+
+[cacheservers-lxc]
+lxc ansible_ssh_host="{{ drupal_project_name }}.lxc"
+
+[searchservers-lxc]
+lxc ansible_ssh_host="{{ drupal_project_name }}.lxc"
+
+[webservers-lxc:children]
+webservers-lxc-main
+webservers-lxc-others
+
+[webservers-main:children]
+webservers-lxc-main
+
+[webservers-others:children]
+webservers-lxc-others
+
+[webservers:children]
+webservers-lxc
+
+[cacheservers:children]
+cacheservers-lxc
+
+[dbservers:children]
+dbservers-lxc
+
+[searchservers:children]
+searchservers-lxc
+
+[lxc:children]
+webservers-lxc
+cacheservers-lxc
+dbservers-lxc
+searchservers-lxc

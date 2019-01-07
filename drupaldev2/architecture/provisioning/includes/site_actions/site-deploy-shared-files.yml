@@ -1,0 +1,28 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+- name: "Check if {{ item.filename }} file already exists in the release folder"
+  stat:
+    path: "{{ deploy_helper.new_release_path }}/{{ item.filename }}"
+  register: release_shared_file
+
+- name: "Init {{ item.filename }} file in the shared folder"
+  template:
+    src:   "templates/drupal/{{ item.template }}"
+    dest:  "{{ deploy_helper.shared_path }}/{{ item.filename }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    mode:  "u=rw,g=rw,o=r"
+
+- name: "Remove {{ item.filename }} file in the release folder"
+  file:
+    path: "{{ deploy_helper.new_release_path }}/{{ item.filename }}"
+    state: absent
+  when: release_shared_file.stat.exists
+
+- name: "Add symlinks for {{ item.filename }} file from the release folder to the shared folder"
+  file:
+    src: "{{ deploy_helper.shared_path }}/{{ item.filename }}"
+    dest: "{{ deploy_helper.new_release_path }}/{{ item.filename }}"
+    state: link

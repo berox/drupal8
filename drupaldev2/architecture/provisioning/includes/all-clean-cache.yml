@@ -1,0 +1,4 @@
+- set_fact:
+    uri: "{{ site_info.value.uri }}"
+
+- include: includes/site_actions/site-clean-cache.yml

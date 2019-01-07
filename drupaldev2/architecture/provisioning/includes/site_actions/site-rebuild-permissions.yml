@@ -1,0 +1,61 @@
+# Need to have the following site variables:
+# - uri
+
+- name: "Check Drush version"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush version --format=string"
+  register: drush_version
+  args:
+    chdir: "{{ drupal_source_path }}"
+  ignore_errors: True
+  run_once: true
+
+# Drush 9.
+- block:
+  - name: "Clear Drush cache to ensure it loads its config file."
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush cc drush"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+  - name: "Rebuild node access permission for site {{ uri }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush php:eval 'node_access_rebuild();' --uri={{ uri }}"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+# Drush 8.
+- block:
+  - name: "Clear Drush cache to ensure it loads its config file."
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush cc drush"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'
+
+  - name: "Rebuild node access permission for site {{ uri }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush php-eval 'node_access_rebuild();' --uri={{ uri }}"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'

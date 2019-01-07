@@ -1,0 +1,7 @@
+#Vars for Drupal
+drupal_hostname:       "{{ drupal_project_name }}-staging.clients.smile.fr"
+drupal_project_path:   "{{ drupal_delivery_path }}/current"
+drupal_source_path:    "{{ drupal_project_path }}/src"
+drupal_mode:           "production"
+
+drupal_install_postfix: true

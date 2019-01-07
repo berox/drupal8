@@ -1,0 +1,12 @@
+- name: "Prepare for PHP mode [fpm]"
+  set_fact:
+    php_mode:               "fpm"
+    apache2_modules:        "{{ apache2_modules + ['proxy_fcgi'] }}"
+    apache2_extra_packages: "{{ apache2_extra_packages|default([]) }}"
+  when: drupal_php_mode == 'fpm'
+
+- name: "Prepare for PHP mode [apache2]"
+  set_fact:
+    php_mode:               "apache2"
+    apache2_modules:        "{{ apache2_modules + ['php{{ php_ver }}'] }}"
+  when: drupal_php_mode != 'fpm'

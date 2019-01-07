@@ -1,0 +1,19 @@
+{% set vhost_params = item.value %}
+
+server {
+    server_name {{vhost_params.server_name}} {% for alias in vhost_params.server_aliases|default([]) %}{{alias}} {% endfor %} ;
+
+    listen {{ nginx_ssl_port }} ssl;
+    ssl_certificate {{vhost_params.ssl.certificate_file}};
+    ssl_certificate_key {{vhost_params.ssl.certificate_key_file}};
+
+    location / {
+        # Forwarded to varnish on {{vhost_params.redirect_host}} port {{vhost_params.redirect_port}}
+        proxy_pass http://{{vhost_params.redirect_host}}:{{vhost_params.redirect_port}}/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # to let webapp know it's https traffic.
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -1,0 +1,11 @@
+# Need to have the following site variables:
+# - uri
+
+- name: "Rebuild Drupal cache for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "{{ drupal_project_path }}/bin/drush cr --uri={{ uri }}"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  run_once: true

@@ -1,0 +1,205 @@
+vcl 4.0;
+
+import std;
+
+backend default {
+    .host = "{{ varnish_backend_host }}";
+    .port = "{{ varnish_backend_port }}";
+}
+
+acl purge {
+{% for ip in varnish_purge %}
+    "{{ ip }}";
+{% endfor %}
+}
+
+acl admin {
+{% for ip in varnish_admin %}
+    "{{ ip }}";
+{% endfor %}
+}
+
+acl client {
+    include "/etc/varnish/smile-hosting.d/smile_ips_global.vcl";
+
+{% for ip in varnish_client %}
+    "{{ ip }}";
+{% endfor %}
+}
+
+sub vcl_recv {
+    if (!(std.ip(regsub(req.http.X-Forwarded-For, "[, ].*$", ""), client.ip) ~ client) && !req.http.Authorization ~ "Basic {{ varnish_basic_auth }}") {
+        return(synth(401, "Forbidden"));
+    }
+
+    # Protection against HTTPOXY CGI vulnerability.
+    unset req.http.proxy;
+
+    # Add an X-Forwarded-For header with the client IP address.
+    if (req.restarts == 0) {
+        if (req.http.X-Forwarded-For) {
+            set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+        }
+        else {
+            set req.http.X-Forwarded-For = client.ip;
+        }
+    }
+
+    # Only allow PURGE requests from IP addresses in the 'purge' ACL.
+    if (req.method == "PURGE") {
+        if (!client.ip ~ purge) {
+            return (synth(405, "Not allowed."));
+        }
+        return (purge);
+    }
+
+    # Only allow BAN requests from IP addresses in the 'purge' ACL.
+    if (req.method == "BAN") {
+        # Same ACL check as above:
+        if (!client.ip ~ purge) {
+            return (synth(403, "Not allowed."));
+        }
+
+        # Logic for the ban, using the Cache-Tags header. For more info
+        # see https://github.com/geerlingguy/drupal-vm/issues/397.
+        if (req.http.Cache-Tags) {
+            ban("obj.http.Cache-Tags ~ " + req.http.Cache-Tags);
+        }
+        # Comment out this to debug.
+        #else {
+        #    return (synth(403, "Cache-Tags header missing."));
+        #}
+
+        # Throw a synthetic page so the request won't go to the backend.
+        return (synth(200, "Ban added."));
+    }
+
+    if (req.method != "GET" &&
+        req.method != "HEAD" &&
+        req.method != "PUT" &&
+        req.method != "POST" &&
+        req.method != "TRACE" &&
+        req.method != "OPTIONS" &&
+        req.method != "DELETE") {
+            /* Non-RFC2616 or CONNECT which is weird. */
+            return (pipe);
+    }
+
+    # Only cache GET and HEAD requests (pass through POST requests).
+    if (req.method != "GET" && req.method != "HEAD") {
+        return (pass);
+    }
+
+    # Pass through any administrative or AJAX-related paths.
+    if (req.url ~ "^/status\.php$" ||
+        req.url ~ "^/update\.php$" ||
+        req.url ~ "^/admin$" ||
+        req.url ~ "^/admin/.*$" ||
+        req.url ~ "^/flag/.*$" ||
+        req.url ~ "^.*/ajax/.*$" ||
+        req.url ~ "^.*/ahah/.*$") {
+            return (pass);
+    }
+
+    # normalize url in case of leading HTTP scheme and domain
+    set req.url = regsub(req.url, "^http[s]?://", "");
+
+    # collect all cookies
+    std.collect(req.http.Cookie);
+
+    # static files are always cacheable. remove SSL flag and cookie
+    if (req.url ~ "^/(pub/)?(media|static)/.*\.(ico|css|js|jpg|jpeg|png|gif|tiff|bmp|mp3|ogg|svg|swf|woff|woff2|eot|ttf|otf)$") {
+        unset req.http.Https;
+        unset req.http.Cookie;
+    }
+
+    # Handle Ctrl-F5 by forcing a cache miss
+    # On Debian Jessie (Varnish 4.0.2), this will keep the hit counter
+    # rising even though it does the right thing
+    if (req.http.Cache-Control ~ "no-cache" && client.ip ~ admin) {
+        set req.hash_always_miss = true;
+    }
+
+    return (hash);
+}
+
+sub vcl_synth {
+    if (resp.status == 401) {
+        set resp.http.WWW-Authenticate = "Basic";
+    }
+}
+
+sub vcl_backend_response {
+    # Set ban-lurker friendly custom headers.
+    set beresp.http.X-Url = bereq.url;
+    set beresp.http.X-Host = bereq.http.host;
+
+    if (beresp.http.content-type ~ "text") {
+        set beresp.do_esi = true;
+    }
+
+    if (bereq.url ~ "\.js$" || beresp.http.content-type ~ "text") {
+        set beresp.do_gzip = true;
+    }
+
+    # cache only successfully responses and 404s
+    if (beresp.status != 200 && beresp.status != 404) {
+        set beresp.ttl = 0s;
+        set beresp.uncacheable = true;
+        return (deliver);
+    }
+    elsif (beresp.http.Cache-Control ~ "private") {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 86400s;
+        return (deliver);
+    }
+
+    # Enable streaming directly to backend for BigPipe responses.
+    if (beresp.http.Surrogate-Control ~ "BigPipe/1.0") {
+        set beresp.do_stream = true;
+        set beresp.ttl = 0s;
+    }
+
+    # validate if we need to cache it and prevent from setting cookie
+    # images, css and js are cacheable by default so we have to remove cookie also
+    if (beresp.ttl > 0s && (bereq.method == "GET" || bereq.method == "HEAD")) {
+        unset beresp.http.set-cookie;
+        if (bereq.url !~ "\.(ico|css|js|jpg|jpeg|png|gif|tiff|bmp|gz|tgz|bz2|tbz|mp3|ogg|svg|swf|woff|woff2|eot|ttf|otf)(\?|$)") {
+            set beresp.http.Pragma = "no-cache";
+            set beresp.http.Expires = "-1";
+            set beresp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
+            set beresp.grace = 1m;
+        }
+    }
+    return (deliver);
+}
+
+sub vcl_deliver {
+    # Remove ban-lurker friendly custom headers when delivering to client.
+    unset resp.http.X-Url;
+    unset resp.http.X-Host;
+
+    # Comment these for easier Drupal cache tag debugging in development.
+    unset resp.http.Purge-Cache-Tags;
+    unset resp.http.X-Drupal-Cache-Contexts;
+
+    if (client.ip ~ admin) {
+        if (obj.hits > 0) {
+            set resp.http.X-Cache = "HIT";
+            set resp.http.X-Cache-Hits = obj.hits;
+        }
+        else {
+            set resp.http.X-Cache = "MISS";
+        }
+    }
+    else {
+        unset resp.http.Age;
+        unset resp.http.X-Drupal-Debug;
+        unset resp.http.X-Drupal-Tags;
+        unset resp.http.X-Powered-By;
+        unset resp.http.Server;
+        unset resp.http.X-Varnish;
+        unset resp.http.Via;
+        unset resp.http.Link;
+    }
+}

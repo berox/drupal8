@@ -1,0 +1,75 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+# TODO: Having a drushrc.php to configure Drush to skip data tables to avoid
+# dumping cache data.
+
+- name: "Ensure dump folder exists."
+  file:
+    path: "{{ drupal_dump_path }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_project_group }}"
+    state: directory
+  failed_when: false
+  run_once: true
+  delegate_to: "{{ groups['webservers-main'][0] }}"
+
+- name: "Check Drush version"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush version --format=string"
+  register: drush_version
+  args:
+    chdir: "{{ drupal_source_path }}"
+  ignore_errors: True
+  run_once: true
+
+# Drush 9.
+- block:
+  - name: "Clear Drush cache to ensure it loads its config file."
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush cc drush"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+  - name: "Dump database for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+#    command: "{{ drupal_project_path }}/bin/drush sql:dump --result-file=\"{{ drupal_dump_path }}/{{ folder_name }}-{{ inventory_hostname }}-{{ ansible_date_time.iso8601 }}.sql\" --gzip --structure-tables-key=common --uri={{ uri }}"
+    command: "{{ drupal_project_path }}/bin/drush sql:dump --result-file=\"{{ drupal_dump_path }}/{{ folder_name }}-{{ inventory_hostname }}-{{ ansible_date_time.iso8601 }}.sql\" --gzip --uri={{ uri }}"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+# Drush 8.
+- block:
+  - name: "Clear Drush cache to ensure it loads its config file."
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush cc drush"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'
+
+  - name: "Dump database for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_project_user }}"
+    command: "{{ drupal_project_path }}/bin/drush sql-dump --result-file=\"{{ drupal_dump_path }}/{{ folder_name }}-{{ inventory_hostname }}-{{ ansible_date_time.iso8601 }}.sql\" --gzip --uri={{ uri }}"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    delegate_to: "{{ groups['webservers-main'][0] }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'

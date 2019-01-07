@@ -1,0 +1,23 @@
+# Need to have the following site variables:
+# - uri
+
+- name: "Enable migration module for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "{{ drupal_project_path }}/bin/drush en {{ drupal_migration_module }} --uri={{ uri }} -y"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: drupal_launch_migration == "On"
+  run_once: true
+
+- name: "Launch migrations for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  command: "{{ drupal_project_path }}/bin/drush mim {{ item }} --uri={{ uri }} --update"
+  with_items: "{{ migration_list|default([]) }}"
+  args:
+    chdir: "{{ drupal_source_path }}"
+  when: drupal_launch_migration == "On"
+  run_once: true

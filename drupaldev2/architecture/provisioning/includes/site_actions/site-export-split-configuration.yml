@@ -1,0 +1,32 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+# - split_name
+
+- set_fact:
+    config_split_is_installed: false
+
+- name: "Check if config_split is installed for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush pm-info --fields=status --format=list --uri={{ uri }} config_split"
+  ignore_errors: True
+  register: config_split_install
+  args:
+    chdir: "{{ drupal_source_path }}"
+
+- set_fact:
+    config_split_is_installed: true
+  when: config_split_install.stdout == 'enabled'
+
+- block:
+  - name: "Export {{ split_name }} configuration for {{ uri }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    shell: "{{ drupal_project_path }}/bin/drush config-split-export {{ split_name }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+
+  when: config_split_is_installed

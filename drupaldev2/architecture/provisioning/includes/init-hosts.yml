@@ -1,0 +1,10 @@
+- name: "Search for already existing specific entry \"{{ item }}\""
+  shell:         "cat /etc/hosts | grep {{ item }} | wc -l"
+  register:      checkline
+  changed_when:  False
+
+- name: "Add missing specific entry \"{{ item }}\""
+  lineinfile:
+    dest=/etc/hosts
+    line="127.0.0.1 {{ item }}"
+  when: checkline.stdout == "0"

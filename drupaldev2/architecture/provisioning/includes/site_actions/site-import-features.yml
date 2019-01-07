@@ -1,0 +1,77 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+# Check Features installation.
+- set_fact:
+    features_is_installed: false
+  run_once: true
+
+- name: "Check Drush version"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush version --format=string"
+  register: drush_version
+  args:
+    chdir: "{{ drupal_source_path }}"
+  ignore_errors: True
+  run_once: true
+
+# Drush 9.
+- block:
+  - name: "Check if Features is installed for {{ uri }} (Drush 9)"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    shell: "{{ drupal_project_path }}/bin/drush pm:list --fields=name --status=enabled --format=list --uri={{ uri }}|grep features"
+    ignore_errors: True
+    register: features_install
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+  - set_fact:
+      features_is_installed: true
+    run_once: true
+    when: drush_version.stdout[:1] == '9' and features_install.stdout|trim!=''
+
+  - name: "Import features for {{ uri }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush features:import:all --bundle={{ drupal_sites[folder_name].drupal_install_profile }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9' and features_is_installed
+
+# Drush 8.
+- block:
+  - name: "Check if Features is installed for {{ uri }} (Drush 8)"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    shell: "{{ drupal_project_path }}/bin/drush pm-info --fields=status --format=list --uri={{ uri }} features"
+    ignore_errors: True
+    register: features_install
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'
+
+  - set_fact:
+      features_is_installed: true
+    run_once: true
+    when: drush_version.stdout[:1] == '8' and features_install.stdout == 'enabled'
+
+  - name: "Import features for {{ uri }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush fim-all --bundle={{ drupal_sites[folder_name].drupal_install_profile }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8' and features_is_installed

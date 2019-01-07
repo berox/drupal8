@@ -1,0 +1,18 @@
+# Need to have the following site variables:
+# - folder_name
+
+# Create a temporary file (tempfile module is not available in ansible 2.1)
+- name: "Create temporary file for cache warmup"
+  command: mktemp
+  register: warmup_tmpfile
+
+- name: "Warm Up Drupal cache {{ drupal_sites[folder_name].urls[0] }}"
+  get_url:
+    url: "https://{{ drupal_sites[folder_name].urls[0] }}"
+    validate_certs: no
+    dest: "{{ warmup_tmpfile.stdout }}"
+
+- name: "Remove cache warmup temporary file"
+  file:
+    path: "{{ warmup_tmpfile.stdout }}"
+    state: absent

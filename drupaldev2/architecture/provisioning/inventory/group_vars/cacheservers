@@ -1,0 +1,4 @@
+#Vars for ansible-redis
+redis_setting_maxmemory_policy: volatile-lru
+
+redis_setting_appendonly: no

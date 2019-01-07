@@ -1,0 +1,10 @@
+- set_fact:
+    uri: "{{ site_info.value.uri }}"
+    folder_name: "{{ site_info.value.folder_name }}"
+
+- block:
+  - include: includes/site_actions/site-deploy-shared-folders.yml
+    with_items: "{{ deploy_shared_folders|default([]) }}"
+
+  - include: includes/site_actions/site-deploy-shared-files.yml
+    with_items: "{{ deploy_shared_files|default([]) }}"

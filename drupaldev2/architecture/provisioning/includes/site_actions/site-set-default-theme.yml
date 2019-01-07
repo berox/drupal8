@@ -1,0 +1,58 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+- name: "Check Drush version"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush version --format=string"
+  register: drush_version
+  args:
+    chdir: "{{ drupal_source_path }}"
+  ignore_errors: True
+  run_once: true
+
+# Drush 9.
+- block:
+  - name: "Enable theme {{ drupal_sites[folder_name].drupal_theme }} for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush theme:enable {{ drupal_sites[folder_name].drupal_theme }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+  - name: "Set theme {{ drupal_sites[folder_name].drupal_theme }} as default theme for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush config:set system.theme default {{ drupal_sites[folder_name].drupal_theme }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '9'
+
+# Drush 8.
+- block:
+  - name: "Enable theme {{ drupal_sites[folder_name].drupal_theme }} for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush en {{ drupal_sites[folder_name].drupal_theme }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'
+
+  - name: "Set theme {{ drupal_sites[folder_name].drupal_theme }} as default theme for {{ folder_name }}"
+    become: yes
+    become_method: sudo
+    become_user: "{{ drupal_webserver_user }}"
+    command: "{{ drupal_project_path }}/bin/drush cset system.theme default {{ drupal_sites[folder_name].drupal_theme }} --uri={{ uri }} -y"
+    args:
+      chdir: "{{ drupal_source_path }}"
+    run_once: true
+    when: drush_version.stdout[:1] == '8'

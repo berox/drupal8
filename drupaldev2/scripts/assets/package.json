@@ -1,0 +1,14 @@
+{
+  "name": "poject",
+  "version": "1.0.0",
+  "devDependencies": {
+    "gulp": "latest",
+    "gulp-watch": "latest",
+    "gulp-rename": "latest",
+    "gulp-concat": "latest",
+    "gulp-sass": "latest",
+    "gulp-sass-glob": "latest",
+    "gulp.spritesmith": "latest",
+    "gulp-imagemin": "~2.4.0"
+  }
+}

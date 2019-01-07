@@ -1,0 +1,21 @@
+---
+- hosts: webservers
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    - fail:
+        msg: "You must provide a 'status' variable in --extra-vars"
+      when: status is not defined or status == ""
+
+    - fail:
+        msg: "'status' must equals to 'enable' or 'disable'."
+      when: status != "enable" and status != "disable"
+
+    - include: includes/site_actions/site-set-maintenance.yml
+      vars:
+        maintenance_mode: "{{ status }}"
+        uri: "{{ script_uri }}"

@@ -1,0 +1,72 @@
+# Need to have the following site variables:
+# - folder_name
+
+- name: "Check if project root folder exists"
+  stat:
+    path: "{{ drupal_project_path }}"
+  register: project_path
+
+- name: "Check if Drupal root folder exists"
+  stat:
+    path: "{{ drupal_source_path }}"
+  register: drupal_path
+
+- name: "Fix permissions for {{ drupal_source_path }}/sites/{{ folder_name }}/files folders"
+  file:
+    path: "{{ drupal_source_path }}/sites/{{ folder_name }}/files"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    recurse: yes
+    follow: yes
+    mode: "g+w"
+  when: drupal_path.stat.exists
+  failed_when: false
+
+- name: "Fix permissions for {{ drupal_project_path }}/private_files/{{ folder_name }} folders"
+  file:
+    path: "{{ drupal_project_path }}/private_files/{{ folder_name }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    recurse: yes
+    follow: yes
+    mode: "g+w"
+  when: drupal_path.stat.exists
+  failed_when: false
+
+- name: "Fix permissions for {{ drupal_project_path }}/conf/{{ folder_name }} folder"
+  file:
+    path: "{{ drupal_project_path }}/conf/{{ folder_name }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    state: directory
+    recurse: yes
+    follow: yes
+    mode: "g+w"
+  when: drupal_path.stat.exists
+  failed_when: false
+
+- name: "Check if configurations files exists for {{ folder_name }}"
+  stat:
+    path: "{{ drupal_source_path }}/sites/{{ folder_name }}/settings.php"
+  register: settings_path
+  when: project_path.stat.exists
+
+- block:
+  - name: "Fix permissions for sites/{{ folder_name }}/settings.php file"
+    file:
+      path: "{{ drupal_source_path }}/sites/{{ folder_name }}/settings.php"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "0444"
+
+  - name: "Fix permissions for sites/{{ folder_name }}/services.yml file"
+    file:
+      path: "{{ drupal_source_path }}/sites/{{ folder_name }}/services.yml"
+      owner: "{{ drupal_project_user }}"
+      group: "{{ drupal_webserver_group }}"
+      follow: yes
+      mode: "0444"
+  when: project_path.stat.exists and settings_path.stat.exists

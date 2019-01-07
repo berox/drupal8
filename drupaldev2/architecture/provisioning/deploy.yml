@@ -1,0 +1,100 @@
+---
+- hosts: webservers
+  any_errors_fatal: true
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+    first_deployment: "N"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    # Check if version is provided
+    - name: "check 'deploy_version' var"
+      fail:
+        msg: "You must provide a 'deploy_version' variable in --extra-vars"
+      when: deploy_version is not defined
+      run_once: true
+
+    # Check the first_deployment parameter.
+    - name: "check 'first_deployment' var"
+      fail:
+        msg: "The extra var 'first_deployment' accepts only Y or N as value"
+      when: first_deployment|upper != "Y" and first_deployment|upper != "N"
+      run_once: true
+
+    # Initialize release process
+    - name: "Initialize the deploy root and gather facts"
+      deploy_helper:
+        path: "{{ drupal_delivery_path }}"
+        release: "{{ deploy_version }}"
+
+    # Check release folder existance
+    - name: "Check if the release folder already exists"
+      stat:
+        path: "{{ deploy_helper.new_release_path }}"
+      register: release
+
+    - name: "Test if release folder already exist"
+      fail:
+        msg: "The release folder {{ deploy_helper.new_release_path }} already exists. Please provide another release or delete release folder."
+      when: release.stat.isdir is defined and release.stat.isdir
+
+    # Deploy from archive
+    - name: "Create the new release folder"
+      file:
+        path: "{{ deploy_helper.new_release_path }}"
+        state: directory
+
+    # Extract the archive
+    - name: "Extract the archive to the new release folder"
+      unarchive:
+        src: "{{ deploy_release_path }}"
+        dest: "{{ deploy_helper.new_release_path }}"
+
+    # Prepare the release
+    - name: "Add an unfinished file, to allow cleanup on successful finalize"
+      file:
+        path: "{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}"
+        state: touch
+
+    - name: "Deploy all shared files and folders."
+      include: includes/all-deploy-shared.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info
+
+    # Update permissions.
+    - include: includes/permissions-tasks-full.yml
+      vars:
+        drupal_project_path: "{{ deploy_helper.new_release_path }}"
+        drupal_source_path: "{{ deploy_helper.new_release_path }}/src"
+
+    - name: "Pre deploy for all sites."
+      include: includes/all-pre-deploy.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info
+      when: first_deployment|upper == "N"
+      run_once: true
+
+    # Activate the release
+    - name: "Removing the unfinished file"
+      file:
+        path: "{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}"
+        state: absent
+
+    - name: "Switching the symlink"
+      deploy_helper:
+        path: "{{ drupal_delivery_path }}"
+        release: "{{ deploy_helper.new_release }}"
+        state: finalize
+        keep_releases: "{{ deploy_keep_releases }}"
+
+    - name: "Post deploy tasks for all sites."
+      include: includes/all-post-deploy.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info
+      when: first_deployment|upper == "N"
+      run_once: true

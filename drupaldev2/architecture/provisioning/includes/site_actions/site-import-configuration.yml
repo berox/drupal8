@@ -1,0 +1,11 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+- name: "Import configuration for {{ uri }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush config-import --uri={{ uri }} -y"
+  args:
+    chdir: "{{ drupal_source_path }}"

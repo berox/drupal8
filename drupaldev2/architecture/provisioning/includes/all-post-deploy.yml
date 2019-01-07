@@ -1,0 +1,16 @@
+- set_fact:
+    uri: "{{ site_info.value.uri }}"
+    folder_name: "{{ site_info.value.folder_name }}"
+
+- name: "Clear Drush cache."
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  shell: "{{ drupal_project_path }}/bin/drush cc drush"
+  register: drupal_install
+  args:
+    chdir: "{{ drupal_source_path }}"
+  run_once: true
+
+- include: includes/site_actions/site-post-deploy-tasks.yml
+  run_once: true

@@ -1,0 +1,32 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+# Need to pass the following variables to the script:
+# - cron_mode (enable or disable)
+
+- name: "Disable Drupal cron for {{ folder_name }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  cron:
+    name:   "Drupal Cron {{ folder_name }}"
+    minute: "*/5"
+    hour:   "*"
+    job:    "{{ drupal_cronjob }}"
+    disabled: true
+  run_once: true
+  when: cron_mode == "disable"
+  delegate_to: "{{ groups['webservers-main'][0] }}"
+
+- name: "Enable Drupal Cron for {{ folder_name }}"
+  become: yes
+  become_method: sudo
+  become_user: "{{ drupal_webserver_user }}"
+  cron:
+    name:   "Drupal Cron {{ folder_name }}"
+    minute: "*/5"
+    hour:   "*"
+    job:    "{{ drupal_cronjob }}"
+  run_once: true
+  when: cron_mode == "enable"
+  delegate_to: "{{ groups['webservers-main'][0] }}"

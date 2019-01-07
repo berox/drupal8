@@ -1,0 +1,18 @@
+- hosts: webservers
+  any_errors_fatal: true
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    - name: "Initialize the deploy root and gather facts"
+      deploy_helper:
+        path: "{{ drupal_delivery_path }}"
+
+    - name: "Generate all shared files."
+      include: includes/all-generate-shared-files.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info

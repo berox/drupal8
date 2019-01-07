@@ -1,0 +1,23 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "root"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    - name: "Update LXC sites."
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_project_user }}"
+      include: includes/upgrade-lxc-sites.yml
+      with_dict: "{{ drupal_sites|default({}) }}"
+      loop_control:
+        loop_var: site_info
+
+    - name: "Reload Systemd"
+      command: "systemctl daemon-reload"
+
+    - name: "Restart Varnish"
+      service: name=varnish state=restarted

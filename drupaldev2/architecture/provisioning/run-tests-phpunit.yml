@@ -1,0 +1,40 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "root"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    - name: "Remove tests output directory."
+      file:
+        path: "{{ drupal_source_path }}/sites/simpletest"
+        state: absent
+
+    - name: "Prepare tests output directory."
+      file:
+        path: "{{ drupal_source_path }}/sites/simpletest"
+        owner: "{{ drupal_project_user }}"
+        group: "{{ drupal_webserver_group }}"
+        mode: "g+w"
+        state: directory
+
+    - name: "Generate phpunit.xml from template."
+      template:
+        src:   "templates/phpunit/phpunit.xml.j2"
+        dest:  "{{ drupal_source_path }}/sites/simpletest/phpunit.xml"
+        owner: "{{ drupal_project_user }}"
+        group: "{{ drupal_webserver_group }}"
+        mode:  "u=rw,g=rw,o=r"
+
+    - name: "Run PHPUnit tests."
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_webserver_user }}"
+      command: "{{ drupal_project_path }}/bin/phpunit -c {{ drupal_source_path }}/sites/simpletest/phpunit.xml {{ phpunit_arguments }}"
+      register: test_results
+
+    - name: "Echo tests results."
+      debug:
+        msg: "{{ test_results.stdout_lines }}"

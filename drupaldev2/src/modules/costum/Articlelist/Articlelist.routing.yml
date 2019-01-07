@@ -1,0 +1,6 @@
+Articlelist:
+  path:  /articlelist
+  defaults:
+    _controller: '\Drupal\Articlelist\Controller\listarticleController::listarticle'
+  requirements:
+    _permission: 'acces content'

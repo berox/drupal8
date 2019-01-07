@@ -1,0 +1,53 @@
+#Vars for Drupal
+drupal_hostname:          "www.{{ drupal_project_name }}.com"
+drupal_project_path:      "{{ drupal_delivery_path }}/current"
+drupal_source_path:       "{{ drupal_project_path }}/src"
+drupal_mode:              "production"
+drupal_db_password:       "generate_password_for_{{ drupal_project_name }}"
+drupal_backend_frontname: "admin_bo_{{ drupal_project_name }}"
+drupal_admin_password:    "generate_password_for_{{ drupal_project_name }}"
+
+#Hosts to prepare in the /etc/hosts file
+specific_hosts:
+  - myfront1
+  - myfront2
+  - mydb
+  - myredis
+#  - myelasticsearch
+
+#Drupal varnish config
+varnish_memory_mb: 256
+varnish_vcl_template: templates/varnish/drupal_varnish4_vcl.prod.j2
+varnish_basic_auth:   "XXXXXXXXXXXXXXXXXXXXXXX="
+drupal_http_cache_hosts:
+  - host: myfront1
+    port: 80
+  - host: myfront2
+    port: 80
+
+#Varnish ACL config
+varnish_purge:
+  - "localhost"
+  - "myfront1"
+  - "myfront2"
+varnish_admin:
+  - "localhost"
+  - "myfront1"
+  - "myfront2"
+varnish_client: [] # for example, add here client IP or IP from payment provider callback
+
+#Nginx
+nginx_vhosts_ssl_certificate_key_file: "/etc/nginx/ssl/{{ drupal_hostname }}.key"
+nginx_vhosts_ssl_certificate_file:     "/etc/nginx/ssl/{{ drupal_hostname }}.pem"
+
+#ElasticSearch
+#es_plugins:
+#  - "analysis-phonetic"
+#  - "analysis-icu"
+#
+#es_config_other:
+#  network.bind_host:  0
+#  bootstrap.mlockall: "true"
+#  script.inline:      "on"
+#  script.indexed:     "on"
+#  path.repo:          "\"/home/backup/local/elastic/\""

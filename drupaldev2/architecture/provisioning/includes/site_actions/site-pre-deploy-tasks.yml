@@ -1,0 +1,24 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+# Check Drupal installation.
+- set_fact:
+    drupal_is_installed: false
+
+- include: includes/site_actions/site-check-drupal-installation.yml
+
+- include: includes/site_actions/site-backup-database.yml
+  when: drupal_is_installed
+
+# Set maintenance flag.
+- include: includes/site_actions/site-set-maintenance.yml
+  vars:
+    maintenance_mode: "enable"
+  when: drupal_is_installed
+
+# Disable cron.
+- include: includes/site_actions/site-set-cron.yml
+  vars:
+    cron_mode: "disable"
+  when: drupal_is_installed

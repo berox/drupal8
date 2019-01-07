@@ -1,0 +1,11 @@
+# Need to have the following site variables:
+# - uri
+# - folder_name
+
+- name: "Init {{ item.filename }} file in the {{ init_path }} folder"
+  template:
+    src:   "templates/drupal/{{ item.template }}"
+    dest:  "{{ init_path }}/{{ item.filename }}"
+    owner: "{{ drupal_project_user }}"
+    group: "{{ drupal_webserver_group }}"
+    mode:  "u=rw,g=rw,o=r"

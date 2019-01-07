@@ -1,0 +1,22 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "{{ drupal_project_user }}"
+
+  tasks:
+    - include: includes/include-vars.yml
+    
+    - include: includes/site_actions/site-permissions.yml
+      vars:
+        folder_name: "{{ script_folder_name }}"
+
+    - include: includes/site_actions/site-backup-database.yml
+      vars:
+        uri: "{{ script_uri }}"
+        folder_name: "{{ script_folder_name }}"
+
+    - include: includes/site_actions/site-upgrade-tasks.yml
+      vars:
+        uri: "{{ script_uri }}"
+        folder_name: "{{ script_folder_name }}"

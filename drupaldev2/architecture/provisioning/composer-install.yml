@@ -1,0 +1,26 @@
+---
+- hosts: webservers-main
+
+  vars:
+    ansible_user: "root"
+
+  tasks:
+    - include: includes/include-vars.yml
+
+    - name: "Composer install"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_project_user }}"
+      command: 'cd {{ drupal_project_path }} && composer install'
+
+    - name: "Composer install - Drupal Scaffold (can be missing)"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_project_user }}"
+      command: 'cd {{ drupal_project_path }} && composer run-script drupal:scaffold'
+
+    - name: "Composer Post install scripts"
+      become: yes
+      become_method: sudo
+      become_user: "{{ drupal_project_user }}"
+      command: 'cd {{ drupal_project_path }} && composer run-script post-install-cmd'
