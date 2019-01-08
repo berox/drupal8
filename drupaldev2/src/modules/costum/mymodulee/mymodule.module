@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * Implements hook_form_alter().
+ */
+function mymodule_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+   if($form_id == 'comment_comment_form')
+   {
+   $form['action']['submit']['value'] = t('Comment');
+   $form1['subject']['widget']['0']['value']['#attributes']['class'][]='newclass_subject';
+   $form2['subject2']['widget']['1']['value']['#attribute']['class'][]='newclass_subject_form';
+   $form3['subject3']['widget']['2']['value']['#value']['classy'][] = 'turn_off_subject';
+   $form_state['suject8']['widget']['5']['value']['#value']['classy'][] = 'class_not_open_to_other_people';
+
+
+//     echo "test";
+   }
+
+//   if(in_array($form_id ,['search_block_form','search_form'])){
+//     $form['keys']['#attributes']['placeholder'] =  t('search...');
+//   }
+
+}

@@ -4,44 +4,45 @@ namespace Drupal\Articlelist\Controller;
 
 use Drupal\node\Entity\Node;
 use http\Env\Response;
+use Symfony\Component\VarDumper\VarDumper;
+use Drupal\taxonomy\Entity\Term;
 
 class listarticleController
 {
 
   public function listarticle()
   {
+    $entity_type_manager = \Drupal::entityTypeManager();
+    $node_storage = $entity_type_manager->getStorage('node');
+    $term_storage = $entity_type_manager->getStorage('taxonomy_term');
 
-    $entities = \Drupal::entityTypeManager()->getStorage('node')->loadByProperties(['type' => 'article']);
+    $entities = $node_storage->loadByProperties(['type' => 'article']);
     $articles = [];
     foreach ($entities as $entity) {
+      $tags = $entity->get('field_tags')->getValue();
+      $tags_ids = [];
+      foreach ($tags as $tag) {
+        $tags_ids[] = $tag['target_id'];
+      }
+      $tags_entities = $term_storage->loadMultiple($tags_ids);
+      
+      $names = [];
+      foreach ($tags_entities as $tags_entity) {
+        $names[] = $tags_entity->getName() ?? 'no title';
+      }
+      $body = $entity->hasField('body') ?? $entity->get('body')->getValue();
       $articles[] = [
-        'title'      => $entity->getTitle(),
-        'field_tags' => $entity->get('field_tags')->getValue(),
-        'body'       => $entity->get('body')->getValue(),
+        'title' => $entity->getTitle(),
+        'tags' => $names,
+        'body' => $body,
       ];
+
+
     }
 
-
-//    dump($articles); die();
-//    $testarticle = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple(['type' => 'article']);
-//    foreach ($testarticle as $item)
-//    {
-//      $table [] = [
-//        'file' => $item->getTitle() ,
-//        'tags' => $item->get('field_tags')->getvalue(),
-//        'body' => $item->get('body')->getvalue(),
-//       $variable = $item->get('body') ->getvalue()
-//        if($variable != 0){
-//          echo "good program";
-//        }
-//
-//      ];
-//    }
-//    var_dump($articles);
-
     return array(
-      '#theme'  => 'article',
-      '#articles'=>$articles,
+      '#theme' => 'article',
+      '#articles' => $articles ?? [],
     );
   }
 }

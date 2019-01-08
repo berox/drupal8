@@ -1,0 +1,4 @@
+name: My moduleee
+type: module
+description: ' Drupal module'
+core: 8.x

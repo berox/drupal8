@@ -1,4 +1,5 @@
-name: module developement
+name: My module
 type: module
-core: '8.x'
-description: 'module by driss berox'
+description: 'My first Drupal module'
+package: Driss Module
+core: 8.x
