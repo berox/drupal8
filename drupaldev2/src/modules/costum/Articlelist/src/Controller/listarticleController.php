@@ -25,7 +25,7 @@ class listarticleController
         $tags_ids[] = $tag['target_id'];
       }
       $tags_entities = $term_storage->loadMultiple($tags_ids);
-      
+
       $names = [];
       foreach ($tags_entities as $tags_entity) {
         $names[] = $tags_entity->getName() ?? 'no title';
